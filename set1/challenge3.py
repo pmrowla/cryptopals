@@ -71,17 +71,24 @@ def find_single_byte_xor_key(ciphertext):
     for i in range(1, 256):
         key = i
         plaintext = single_byte_xor_decrypt(ciphertext, chr(i))
+        try:
+            plaintext.decode('ascii')
+        except UnicodeDecodeError:
+            continue
+        if '\x00' in plaintext:
+            continue
         score = score_plaintext(plaintext)
         plaintext_scores.append((key, score, plaintext))
     plaintext_scores = sorted(plaintext_scores,
                               cmp=lambda x, y: cmp(x[1], y[1]))
     possible_keys = {}
-    min_score = plaintext_scores[0][1]
-    for key, score, plaintext in plaintext_scores:
-        if score == min_score:
-            possible_keys[key] = (plaintext, score)
-        else:
-            break
+    if plaintext_scores:
+        min_score = plaintext_scores[0][1]
+        for key, score, plaintext in plaintext_scores:
+            if score == min_score:
+                possible_keys[key] = (plaintext, score)
+            else:
+                break
     return possible_keys
 
 
@@ -93,8 +100,6 @@ def main():
     print '--------+----------'
     for key in possible_keys:
         (plaintext, score) = possible_keys[key]
-        if '\x00' in plaintext:
-            continue
         print '[ %3d ] | %s' % (key, possible_keys[key])
 
 
